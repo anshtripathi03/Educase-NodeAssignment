@@ -1,0 +1,210 @@
+{
+  "info": {
+    "_postman_id": "school-management-api-collection",
+    "name": "School Management API",
+    "description": "Complete Postman collection for the School Management REST API.\n\nSet the `baseUrl` variable to your server URL before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Verifies the server is running."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Server is healthy\",\n  \"timestamp\": \"2024-06-01T12:00:00.000Z\",\n  \"uptime\": 42.5\n}"
+        }
+      ]
+    },
+    {
+      "name": "Add School — Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Springfield Elementary School\",\n  \"address\": \"123 Main Street, Springfield, IL 62701\",\n  \"latitude\": 39.7817,\n  \"longitude\": -89.6501\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/addSchool",
+          "host": ["{{baseUrl}}"],
+          "path": ["addSchool"]
+        },
+        "description": "Creates a new school. Returns 201 on success."
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"success\": true,\n  \"message\": \"School added successfully\",\n  \"data\": {\n    \"id\": 1\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Add School — Validation Error (missing fields)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"address\": \"123 Main St\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/addSchool",
+          "host": ["{{baseUrl}}"],
+          "path": ["addSchool"]
+        },
+        "description": "Missing / invalid fields — expects 400 with validation errors."
+      },
+      "response": [
+        {
+          "name": "400 Bad Request",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"name\", \"message\": \"School name is required\" },\n    { \"field\": \"latitude\", \"message\": \"Latitude is required\" },\n    { \"field\": \"longitude\", \"message\": \"Longitude is required\" }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Add School — Validation Error (out-of-range lat/lon)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test School\",\n  \"address\": \"Some Street, Some City\",\n  \"latitude\": 999,\n  \"longitude\": -999\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/addSchool",
+          "host": ["{{baseUrl}}"],
+          "path": ["addSchool"]
+        }
+      },
+      "response": [
+        {
+          "name": "400 Bad Request",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"latitude\", \"message\": \"Latitude must be between -90 and 90\" },\n    { \"field\": \"longitude\", \"message\": \"Longitude must be between -180 and 180\" }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Schools — Default (page 1, limit 10)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/listSchools?latitude=28.6139&longitude=77.2090",
+          "host": ["{{baseUrl}}"],
+          "path": ["listSchools"],
+          "query": [
+            { "key": "latitude",  "value": "28.6139", "description": "New Delhi" },
+            { "key": "longitude", "value": "77.2090" }
+          ]
+        },
+        "description": "Returns schools sorted by distance from New Delhi. Page 1, limit 10 by default."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Schools fetched successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Delhi Public School\",\n      \"address\": \"Mathura Road, New Delhi, Delhi 110003\",\n      \"latitude\": 28.5494,\n      \"longitude\": 77.2001,\n      \"distance_km\": 8.07\n    },\n    {\n      \"id\": 8,\n      \"name\": \"Ahmedabad Public School\",\n      \"address\": \"Navrangpura, Ahmedabad, Gujarat 380009\",\n      \"latitude\": 23.0305,\n      \"longitude\": 72.5595,\n      \"distance_km\": 775.31\n    }\n  ],\n  \"meta\": {\n    \"total\": 8,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"hasNextPage\": false,\n    \"hasPrevPage\": false\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Schools — Paginated (page 2, limit 3)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/listSchools?latitude=28.6139&longitude=77.2090&page=2&limit=3",
+          "host": ["{{baseUrl}}"],
+          "path": ["listSchools"],
+          "query": [
+            { "key": "latitude",  "value": "28.6139" },
+            { "key": "longitude", "value": "77.2090" },
+            { "key": "page",      "value": "2" },
+            { "key": "limit",     "value": "3" }
+          ]
+        },
+        "description": "Second page of results — 3 schools per page."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Schools fetched successfully\",\n  \"data\": [ \"...3 school objects...\" ],\n  \"meta\": {\n    \"total\": 8,\n    \"page\": 2,\n    \"limit\": 3,\n    \"totalPages\": 3,\n    \"hasNextPage\": true,\n    \"hasPrevPage\": true\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Schools — Validation Error (missing lat/lon)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/listSchools",
+          "host": ["{{baseUrl}}"],
+          "path": ["listSchools"]
+        }
+      },
+      "response": [
+        {
+          "name": "400 Bad Request",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"latitude\",  \"message\": \"Latitude query parameter is required\" },\n    { \"field\": \"longitude\", \"message\": \"Longitude query parameter is required\" }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "404 — Unknown Route",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/unknownRoute",
+          "host": ["{{baseUrl}}"],
+          "path": ["unknownRoute"]
+        }
+      },
+      "response": [
+        {
+          "name": "404 Not Found",
+          "status": "Not Found",
+          "code": 404,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Route not found: GET /unknownRoute\"\n}"
+        }
+      ]
+    }
+  ]
+}
